@@ -1,289 +1,217 @@
 // cypress/support/commands.js
-// Amplitude capture + debug instrumentation (Cypress)
-//
-// Strategy:
-// 1) Capture events at the SOURCE (window.amplitude.track / logEvent / instance.track / instance.logEvent)
-// 2) ALSO capture network payloads to Amplitude HTTP API (fetch + sendBeacon)
-// 3) Provide debug helpers to quickly see why "0 captured" happens
 
-const AMP_DEBUG = true; // flip to false once stable
+/**
+ * Capture strategy (reliable):
+ * - Capture Amplitude events from network calls:
+ *   - fetch() POST to https://api2.amplitude.com/2/httpapi
+ *   - navigator.sendBeacon() to same endpoint (best-effort parsing)
+ *
+ * Why: In your run, amplitude.track is READ-ONLY, so we cannot monkey-patch it.
+ * Network capture is the most stable verification method for Amplitude browser SDK.
+ */
 
-function dbg(win, msg, data) {
-  if (!AMP_DEBUG) return;
+function tryParseJson(value) {
   try {
-    win.console.log(`[AMP-DEBUG] ${msg}`, data ?? '');
-  } catch {
-    // ignore
-  }
-}
-
-function safeJsonParse(value) {
-  try {
-    if (typeof value === 'string') return JSON.parse(value);
-    return value;
+    return JSON.parse(value);
   } catch {
     return null;
   }
 }
 
-function normalizeHttpApiPayload(body) {
-  // body can be string | object
-  const parsed = safeJsonParse(body);
-  if (!parsed) return null;
-
-  // amplitude httpapi typically: { api_key, events: [...], options? }
-  if (Array.isArray(parsed.events)) return parsed;
-
-  // sometimes nested / wrapped
-  if (parsed.data && Array.isArray(parsed.data.events)) return parsed.data;
-  return parsed;
+function isAmplitudeHttpApi(url) {
+  return typeof url === "string" && url.includes("api2.amplitude.com/2/httpapi");
 }
 
-function pushCapturedEvent(win, event) {
-  win.__capturedAmplitudeEvents = win.__capturedAmplitudeEvents || [];
-  win.__capturedAmplitudeEvents.push(event);
-}
-
-function tryWrapFn(win, obj, fnName, wrapperFlag) {
-  if (!obj) return false;
-  const original = obj[fnName];
-  if (typeof original !== 'function') return false;
-  if (obj[wrapperFlag]) return true;
-
-  obj[fnName] = function (...args) {
-    // Support both Amplitude JS styles:
-    // 1) track(eventName, properties?, options?)
-    // 2) logEvent(eventName, properties?)
-    const eventName = args[0];
-    const props = args[1] || {};
-    const options = args[2] || {};
-
-    // Capture "track" style into a normalized event shape
-    pushCapturedEvent(win, {
-      captured_via: `amplitude.${fnName}`,
-      event_type: eventName,
-      event_properties: props || {},
-      options: options || {},
-      capturedAt: Date.now(),
-    });
-
-    dbg(win, `${fnName}() captured`, {
-      eventName,
-      propsKeys: props ? Object.keys(props) : [],
-    });
-
-    return original.apply(this, args);
+function pushCapturedEvents(win, payload) {
+  win.__capturedAmplitude = win.__capturedAmplitude || {
+    requests: [],
+    events: [],
+    notes: [],
   };
 
-  obj[wrapperFlag] = true;
-  return true;
-}
+  win.__capturedAmplitude.requests.push(payload);
 
-function wrapAmplitudeGlobal(win, amp) {
-  if (!amp) return;
-
-  // Wrap top-level functions (common patterns)
-  tryWrapFn(win, amp, 'track', '__cse_wrapped_track');
-  tryWrapFn(win, amp, 'logEvent', '__cse_wrapped_logEvent');
-
-  // Wrap instance methods (legacy getInstance pattern)
-  try {
-    if (typeof amp.getInstance === 'function') {
-      const inst = amp.getInstance();
-      if (inst) {
-        tryWrapFn(win, inst, 'track', '__cse_wrapped_inst_track');
-        tryWrapFn(win, inst, 'logEvent', '__cse_wrapped_inst_logEvent');
-      }
-    }
-  } catch (e) {
-    dbg(win, 'wrapAmplitudeGlobal() getInstance ERROR', e?.message || e);
-  }
-}
-
-function installAmplitudeAssignmentHook(win) {
-  // always reset per test
-  win.__capturedAmplitudeEvents = [];
-
-  dbg(win, 'installAmplitudeAssignmentHook() called', {
-    href: win.location?.href,
-    readyState: win.document?.readyState,
-    hasAmplitude: !!win.amplitude,
-    hasFetch: typeof win.fetch,
-    hasBeacon: typeof win.navigator?.sendBeacon,
-  });
-
-  // If amplitude already exists, wrap immediately
-  if (win.amplitude) {
-    dbg(win, 'window.amplitude already exists - wrapping immediately', {
-      keys: Object.keys(win.amplitude || {}),
+  // Amplitude HTTP API typically looks like: { api_key, events: [...] }
+  if (payload && Array.isArray(payload.events)) {
+    payload.events.forEach((evt) => {
+      win.__capturedAmplitude.events.push(evt);
     });
-    wrapAmplitudeGlobal(win, win.amplitude);
-    return;
   }
-
-  // Otherwise intercept future assignment to window.amplitude
-  let _ampValue;
-
-  Object.defineProperty(win, 'amplitude', {
-    configurable: true,
-    enumerable: true,
-    get() {
-      return _ampValue;
-    },
-    set(val) {
-      _ampValue = val;
-
-      dbg(win, 'window.amplitude assigned', {
-        type: typeof val,
-        keys: val ? Object.keys(val) : [],
-        hasGetInstance: typeof val?.getInstance,
-      });
-
-      try {
-        wrapAmplitudeGlobal(win, _ampValue);
-        dbg(win, 'wrapAmplitudeGlobal() complete', {
-          wrappedTrack: !!_ampValue?.__cse_wrapped_track,
-          wrappedLogEvent: !!_ampValue?.__cse_wrapped_logEvent,
-        });
-      } catch (e) {
-        dbg(win, 'wrapAmplitudeGlobal() ERROR', e?.message || e);
-      }
-    },
-  });
 }
 
 function installAmplitudeNetworkCapture(win) {
-  // Capture HTTP API network payloads (fetch + sendBeacon)
-  // Works even if track wrappers aren't hit (SDK internal pipeline)
+  win.__capturedAmplitude = { requests: [], events: [], notes: [] };
 
-  // --- fetch ---
-  if (typeof win.fetch === 'function') {
-    const originalFetch = win.fetch.bind(win);
+  // ---- fetch() capture ----
+  const originalFetch = win.fetch;
+  if (typeof originalFetch === "function") {
+    win.fetch = function (...args) {
+      try {
+        const [input, init] = args;
+        const url = typeof input === "string" ? input : input?.url;
 
-    win.fetch = async function (input, init = {}) {
-      const url = typeof input === 'string' ? input : input?.url || '';
+        if (isAmplitudeHttpApi(url)) {
+          // init.body is usually a JSON string
+          const body = init?.body;
+          const parsed = typeof body === "string" ? tryParseJson(body) : null;
 
-      const isAmpHttpApi =
-        url.includes('api2.amplitude.com/2/httpapi') ||
-        url.includes('api.amplitude.com/2/httpapi') ||
-        url.includes('/2/httpapi');
+          win.__capturedAmplitude.notes.push(
+            `fetch -> amplitude httpapi (parsed=${!!parsed})`
+          );
 
-      if (!isAmpHttpApi) {
-        return originalFetch(input, init);
-      }
-
-      // Attempt to read body
-      const body = init?.body;
-      const parsed = normalizeHttpApiPayload(body);
-
-      if (parsed?.events?.length) {
-        parsed.events.forEach((e) => pushCapturedEvent(win, e));
-      }
-
-      dbg(win, 'FETCH Amplitude HTTPAPI captured', {
-        url,
-        method: init?.method,
-        eventsCount: parsed?.events?.length || 0,
-        eventTypes: (parsed?.events || []).map((e) => e?.event_type).filter(Boolean),
-      });
-
-      return originalFetch(input, init);
-    };
-  }
-
-  // --- sendBeacon ---
-  if (typeof win.navigator?.sendBeacon === 'function') {
-    const originalBeacon = win.navigator.sendBeacon.bind(win.navigator);
-
-    win.navigator.sendBeacon = function (url, data) {
-      const isAmpHttpApi =
-        String(url).includes('api2.amplitude.com/2/httpapi') ||
-        String(url).includes('api.amplitude.com/2/httpapi') ||
-        String(url).includes('/2/httpapi');
-
-      if (isAmpHttpApi) {
-        const parsed = normalizeHttpApiPayload(data);
-
-        if (parsed?.events?.length) {
-          parsed.events.forEach((e) => pushCapturedEvent(win, e));
+          if (parsed) pushCapturedEvents(win, parsed);
         }
-
-        dbg(win, 'BEACON Amplitude HTTPAPI captured', {
-          url,
-          dataType: typeof data,
-          eventsCount: parsed?.events?.length || 0,
-          eventTypes: (parsed?.events || []).map((e) => e?.event_type).filter(Boolean),
-        });
+      } catch (e) {
+        win.__capturedAmplitude.notes.push(
+          `fetch capture error: ${String(e?.message || e)}`
+        );
       }
 
-      return originalBeacon(url, data);
+      return originalFetch.apply(this, args);
     };
+  } else {
+    win.__capturedAmplitude.notes.push("No window.fetch available to patch");
+  }
+
+  // ---- sendBeacon() capture (best effort) ----
+  const originalBeacon = win.navigator?.sendBeacon;
+  if (typeof originalBeacon === "function") {
+    win.navigator.sendBeacon = function (url, data) {
+      try {
+        if (isAmplitudeHttpApi(url)) {
+          // data might be string, Blob, ArrayBufferView, etc.
+          // We can reliably parse ONLY if it's a string.
+          if (typeof data === "string") {
+            const parsed = tryParseJson(data);
+            win.__capturedAmplitude.notes.push(
+              `sendBeacon -> amplitude httpapi (parsed=${!!parsed})`
+            );
+            if (parsed) pushCapturedEvents(win, parsed);
+          } else {
+            win.__capturedAmplitude.notes.push(
+              `sendBeacon -> amplitude httpapi (non-string payload, not parsed)`
+            );
+          }
+        }
+      } catch (e) {
+        win.__capturedAmplitude.notes.push(
+          `sendBeacon capture error: ${String(e?.message || e)}`
+        );
+      }
+
+      return originalBeacon.apply(this, arguments);
+    };
+  } else {
+    win.__capturedAmplitude.notes.push("No navigator.sendBeacon available to patch");
+  }
+
+  // Track amplitude presence (debug only)
+  try {
+    win.__capturedAmplitude.notes.push(`typeof window.amplitude at onBeforeLoad: ${typeof win.amplitude}`);
+  } catch {
+    // ignore
   }
 }
 
-function installAmplitudeCapture(win) {
-  // Install both assignment hook and network capture
-  installAmplitudeAssignmentHook(win);
-  installAmplitudeNetworkCapture(win);
-}
+/**
+ * OneTrust consent helper (cookies) - keep this; it's useful.
+ * Note: window.OnetrustActiveGroups is a runtime variable; cookie setting doesn't guarantee it exists.
+ */
+Cypress.Commands.add("setOneTrustAnalyticsConsent", () => {
+  cy.task("log", "[AMP-DEBUG] Setting OneTrust analytics consent");
 
-Cypress.Commands.add('visitWithAmplitudeCapture', (path, options = {}) => {
-  const visitOptions = {
-    ...options,
-    onBeforeLoad: (win) => {
-      installAmplitudeCapture(win);
+  const now = new Date();
 
-      if (typeof options.onBeforeLoad === 'function') {
-        options.onBeforeLoad(win);
-      }
-    },
-  };
+  cy.setCookie("OptanonAlertBoxClosed", "true", {
+    domain: "qa.commonsense.org",
+    secure: true,
+  });
 
-  cy.visit(path, visitOptions);
-});
+  const consentValue =
+    "isIABGlobal=false" +
+    "&datestamp=" +
+    encodeURIComponent(now.toString()) +
+    "&version=202401.1.0" +
+    "&consentId=cypress-consent" +
+    "&interactionCount=1" +
+    "&groups=" +
+    encodeURIComponent("C0001:1,C0002:1") +
+    "&AwaitingReconsent=false";
 
-Cypress.Commands.add('getCapturedAmplitudeEvents', () => {
-  return cy.window({ log: false }).then((win) => win.__capturedAmplitudeEvents || []);
-});
+  cy.setCookie("OptanonConsent", consentValue, {
+    domain: "qa.commonsense.org",
+    secure: true,
+  });
 
-Cypress.Commands.add('dumpAmplitudeDebug', () => {
-  cy.window({ log: false }).then((win) => {
-    const events = win.__capturedAmplitudeEvents || [];
-    const types = [...new Set(events.map((e) => e?.event_type).filter(Boolean))];
-
-    cy.log(`DEBUG: readyState=${win.document?.readyState}`);
-    cy.log(`DEBUG: typeof window.amplitude=${typeof win.amplitude}`);
-    cy.log(
-      `DEBUG: amplitude keys=${win.amplitude ? Object.keys(win.amplitude).join(', ') : '(none)'}`
-    );
-    cy.log(`DEBUG: typeof fetch=${typeof win.fetch}`);
-    cy.log(`DEBUG: typeof sendBeacon=${typeof win.navigator?.sendBeacon}`);
-    cy.log(`DEBUG: capturedCount=${events.length}`);
-    cy.log(`DEBUG: capturedTypes=${types.join(', ') || '(none)'}`);
-
-    // Consent (OneTrust) hints
-    cy.log(`DEBUG: OnetrustActiveGroups=${win.OnetrustActiveGroups || '(none)'}`);
-    cy.log(`DEBUG: OptanonActiveGroups=${win.OptanonActiveGroups || '(none)'}`);
+  cy.setCookie("OptanonActiveGroups", ",C0001,C0002,", {
+    domain: "qa.commonsense.org",
+    secure: true,
   });
 });
 
-// Wait for a specific event_type to appear in captured events
-Cypress.Commands.add('waitForAmplitudeEvent', (eventType, predicate = null, timeoutMs = 60000) => {
+/**
+ * Visit wrapper: install capture BEFORE any app JS runs
+ */
+Cypress.Commands.add("visitWithAmplitudeCapture", (path) => {
+  cy.task("log", `[AMP-DEBUG] Visiting ${path}`);
+
+  cy.visit(path, {
+    onBeforeLoad: (win) => {
+      installAmplitudeNetworkCapture(win);
+    },
+  });
+});
+
+Cypress.Commands.add("dumpAmplitudeDebug", () => {
+  return cy.window({ log: false }).then((win) => {
+    const cap = win.__capturedAmplitude || { requests: [], events: [], notes: [] };
+    const types = [...new Set((cap.events || []).map((e) => e?.event_type).filter(Boolean))];
+
+    const debug = {
+      href: win.location.href,
+      readyState: win.document.readyState,
+      amplitudeType: typeof win.amplitude,
+      amplitudeKeys: win.amplitude ? Object.keys(win.amplitude) : [],
+      hasFetch: typeof win.fetch,
+      hasSendBeacon: typeof win.navigator?.sendBeacon,
+      requestCount: cap.requests.length,
+      eventCount: cap.events.length,
+      eventTypes: types,
+      notes: cap.notes || [],
+      OnetrustActiveGroups: win.OnetrustActiveGroups ?? null,
+      OptanonActiveGroups: win.OptanonActiveGroups ?? null,
+    };
+
+    return cy.task("log", "[AMP-DEBUG] dumpAmplitudeDebug()").then(() =>
+      cy.task("logJson", debug)
+    );
+  });
+});
+
+Cypress.Commands.add("getCapturedAmplitudeEvents", () => {
+  return cy.window({ log: false }).then((win) => {
+    const cap = win.__capturedAmplitude || { events: [] };
+    return cap.events || [];
+  });
+});
+
+Cypress.Commands.add("waitForAmplitudeEvent", (eventType, predicate = null, timeoutMs = 60000) => {
   const start = Date.now();
 
-  const check = () => {
+  const poll = () => {
     return cy.getCapturedAmplitudeEvents().then((events) => {
       const matches = events.filter((e) => e && e.event_type === eventType);
 
-      const filtered = typeof predicate === 'function'
-        ? matches.filter((e) => {
-            try {
-              return !!predicate(e);
-            } catch {
-              return false;
-            }
-          })
-        : matches;
+      const filtered =
+        typeof predicate === "function"
+          ? matches.filter((e) => {
+              try {
+                return !!predicate(e);
+              } catch {
+                return false;
+              }
+            })
+          : matches;
 
       if (filtered.length > 0) return filtered[0];
 
@@ -291,24 +219,28 @@ Cypress.Commands.add('waitForAmplitudeEvent', (eventType, predicate = null, time
       if (elapsed > timeoutMs) {
         const seen = [...new Set(events.map((e) => e?.event_type).filter(Boolean))];
         throw new Error(
-          `Amplitude event not captured within ${timeoutMs}ms: ${eventType}. Seen types: ${seen.join(', ') || '(none)'}`
+          `Amplitude event not captured within ${timeoutMs}ms: ${eventType}. Seen: ${
+            seen.join(", ") || "(none)"
+          }`
         );
       }
 
-      return cy.wait(500, { log: false }).then(check);
+      return cy.wait(500, { log: false }).then(poll);
     });
   };
 
-  return check();
+  return poll();
 });
 
-// Quick helper: show event types captured (useful during debugging)
-Cypress.Commands.add('logCapturedAmplitudeEventTypes', () => {
+Cypress.Commands.add("logCapturedAmplitudeEventTypes", () => {
   cy.getCapturedAmplitudeEvents().then((events) => {
-    const names = [...new Set(events.map((e) => e?.event_type).filter(Boolean))];
-    cy.log(`Captured event types: ${names.join(', ') || '(none)'}`);
+    const types = [...new Set(events.map((e) => e?.event_type).filter(Boolean))];
+    cy.task("log", `[AMP-DEBUG] Captured event types: ${types.join(", ") || "(none)"}`);
   });
 });
+
+
+
 
 
 
