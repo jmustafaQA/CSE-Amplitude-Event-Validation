@@ -4,28 +4,28 @@ Cypress-based framework for validating critical Amplitude analytics events on Co
 
 This project verifies that high-value analytics events are actually emitted from the browser, delivered to Amplitude over the network, and include the expected CMS and routing metadata in a real QA environment.
 
-This is end-to-end analytics contract validation, not unit testing.
+This is end-to-end analytics contract validation.
 
 ---
 
-## Why Cypress (and not Jest)
+## Why Cypress Is Used
 
-The existing analytics Jest tests validate enrichment logic in isolation.
+Cypress is used because analytics behavior depends on real browser conditions.
 
-This framework complements that by validating real browser behavior:
+This framework requires:
+- A real browser session
+- Consent gating via OneTrust
+- SDK initialization timing
+- Page lifecycle events (load, navigation, interaction)
+- Network-level verification of what is sent to Amplitude
 
-- Confirms events fire in a real browser session
-- Verifies OneTrust consent gating
-- Captures outbound Amplitude network traffic (fetch / sendBeacon)
-- Validates events after SDK initialization and page lifecycle
-- Catches regressions that unit tests cannot (timing, routing, consent, SDK behavior)
+Cypress allows us to:
+- Control consent state before page load
+- Capture outbound network traffic (fetch and sendBeacon)
+- Validate events after the SDK initializes
+- Assert behavior that only occurs in a real browser
 
-In short:
-
-- Jest → Is the analytics code correct?
-- Cypress → Does the event actually fire and leave the browser?
-
-Both are required for confidence.
+This ensures analytics events are validated in production-like conditions, not simulated environments.
 
 ---
 
