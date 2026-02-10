@@ -1,0 +1,23 @@
+{
+  "name": "cse-amplitude-analytics",
+  "version": "1.0.0",
+  "description": "Cypress-based framework for validating **Amplitude Tier-1 analytics events** on Common Sense Education pages.",
+  "main": "cypress.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jmustafaQA/CSE-Amplitude-Event-Validation.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jmustafaQA/CSE-Amplitude-Event-Validation/issues"
+  },
+  "homepage": "https://github.com/jmustafaQA/CSE-Amplitude-Event-Validation#readme",
+  "devDependencies": {
+    "cypress": "^15.10.0"
+  }
+}
