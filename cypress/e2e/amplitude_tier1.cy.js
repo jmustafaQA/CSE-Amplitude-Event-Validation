@@ -165,6 +165,52 @@ describe("Amplitude Tier-1 Analytics", () => {
         );
       },
     },
+
+    {
+      name: "Viewed Course (Teaching Digital Literacy and Well-Being)",
+      path: "/education/training/teaching-digital-literacy-and-well-being",
+      eventType: "Viewed Course",
+      assert: (evt) => {
+        const props = evt.event_properties || {};
+    
+        return (
+          props.page_url_path === "/education/training/teaching-digital-literacy-and-well-being" &&
+          props.page_url_full ===
+            "https://qa.commonsense.org/education/training/teaching-digital-literacy-and-well-being" &&
+          props.page_title === "Teaching Digital Literacy and Well-Being | Common Sense Education" &&
+          props.cse_content_type === "pd_course" &&
+          props.cse_content_title === "Teaching Digital Literacy and Well-Being" &&
+          props.cse_entity_group === "node" &&
+          props.cse_entity_id === 5122781 &&
+          props.page_http_status_code === 200 &&
+          props.page_language === "en" &&
+          props.source_org === "Common Sense Education"
+        );
+      },
+    },
+    
+    {
+      name: "Viewed Article (Reduce Student Anxiety)",
+      path: "/education/articles/reduce-student-anxiety-and-your-own-during-uncertain-times",
+      eventType: "Viewed Article",
+      assert: (evt) => {
+        const props = evt.event_properties || {};
+    
+        return (
+          props.page_url_path ===
+            "/education/articles/reduce-student-anxiety-and-your-own-during-uncertain-times" &&
+          props.page_title ===
+            "Reduce Student Anxiety (and Your Own) During Uncertain Times | Common Sense Education" &&
+          props.cse_content_type === "article" &&
+          props.content_type === "article" &&
+          props.cse_entity_group === "node" &&
+          props.cse_entity_id === 5057335 &&
+          props.page_http_status_code === 200 &&
+          props.page_language === "en" &&
+          props.source_org === "Common Sense Education"
+        );
+      },
+    },    
   ];
 
   cases.forEach(({ name, path, eventType, assert, run }) => {
