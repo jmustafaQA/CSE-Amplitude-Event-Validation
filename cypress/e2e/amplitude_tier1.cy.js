@@ -175,6 +175,30 @@ describe("Amplitude Tier-1 Analytics", () => {
     },
   ];
 
+  const registrationCases = [
+    {
+      name: "Viewed Registration Form",
+      path: "/user/register",
+      eventType: "Viewed Registration Form",
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+
+        // Keep this strict to QA, since this suite runs against qa.commonsense.org
+        return (
+          p.ampl_page_view === true &&
+          p.page_url_path === "/user/register" &&
+          p.page_title === "Create Your Free Account | Common Sense Education | Common Sense Education" &&
+          p.page_http_status_code === 200 &&
+          p.page_language === "en" &&
+          p.source_org === "Common Sense Education" &&
+          p.source_system_route_name === "user.register" &&
+          p.is_admin_theme_page === false &&
+          p.form_id === "user_register_form"
+        );
+      },
+    },
+  ];
+
   const clickCases = [
     {
       // Important: this CTA is currently emitting "Clicked Link" (not "Clicked Element")
@@ -243,16 +267,16 @@ describe("Amplitude Tier-1 Analytics", () => {
         const p = evt.event_properties || {};
         const pagePath = String(p.page_url_path || "");
         const interaction = String(p.interaction_type || "").toLowerCase();
-    
+
         const tag = String(p.element_tag || p["[Amplitude] Element Tag"] || "").toLowerCase();
         const elId = p.element_id;
-    
+
         const classes = p.element_classes || [];
         const classOk =
           Array.isArray(classes) &&
           classes.includes("preview-teaser-link") &&
           classes.includes("video-modal");
-    
+
         return (
           pagePath === "/education/collections/quick-digital-citizenship-lessons-for-grades-k-12" &&
           interaction === "click" &&
@@ -266,7 +290,7 @@ describe("Amplitude Tier-1 Analytics", () => {
           p.page_http_status_code === 200
         );
       },
-    },    
+    },
 
     {
       name: 'Clicked Element (Collection Modal - Video.js big "Play Video" button)',
@@ -297,7 +321,7 @@ describe("Amplitude Tier-1 Analytics", () => {
       },
       assert: (evt) => {
         const p = evt.event_properties || {};
-    
+
         // Hard requirements (these are in your captured summary)
         const requiredOk =
           p.page_url_path === "/education/collections/quick-digital-citizenship-lessons-for-grades-k-12" &&
@@ -307,7 +331,7 @@ describe("Amplitude Tier-1 Analytics", () => {
           p.video_title === "WhatIsDigitalCitizenship_2017" &&
           typeof p.video_url === "string" &&
           p.video_url.includes("WhatIsDigitalCitizenship_2017.mp4");
-    
+
         // Optional validations (only if present)
         const optionalOk =
           (p.video_provider ? p.video_provider === "html5" : true) &&
@@ -320,7 +344,7 @@ describe("Amplitude Tier-1 Analytics", () => {
           (typeof p.cse_entity_id === "number" ? p.cse_entity_id === 5112984 : true) &&
           (p.cse_content_type ? p.cse_content_type === "collection" : true) &&
           (p.source_org ? p.source_org === "Common Sense Education" : true);
-    
+
         return requiredOk && optionalOk;
       },
     },
@@ -331,36 +355,36 @@ describe("Amplitude Tier-1 Analytics", () => {
       run: () => {
         cy.get('button[id^="video-modal-"].preview-teaser-link').first().click({ force: true });
         cy.get("button.vjs-big-play-button").click({ force: true });
-    
+
         // Pause via Video.js control (stable once controls are ready)
         cy.get("button.vjs-play-control").click({ force: true });
       },
       assert: (evt) => {
         const p = evt.event_properties || {};
-    
+
         return (
           p.page_url_path === "/education/collections/quick-digital-citizenship-lessons-for-grades-k-12" &&
           p.page_http_status_code === 200 &&
           p.source_org === "Common Sense Education" &&
           p.cse_content_type === "collection" &&
           p.cse_entity_id === 5112984 &&
-    
+
           p.video_provider === "html5" &&
           p.video_title === "WhatIsDigitalCitizenship_2017" &&
           typeof p.video_url === "string" &&
           p.video_url.includes("WhatIsDigitalCitizenship_2017.mp4") &&
-    
+
           typeof p.current_time_seconds === "number" &&
           p.current_time_seconds >= 0 &&
           typeof p.percent_complete === "number" &&
           p.percent_complete >= 0 &&
           p.percent_complete <= 1 &&
-    
+
           p.player_state === "paused" &&
           p.stop_reason === "user_pause"
         );
       },
-    },    
+    },
   ];
 
   const runCase = ({ name, path, eventType, assert, run }) => {
@@ -384,6 +408,10 @@ describe("Amplitude Tier-1 Analytics", () => {
     viewedCases.forEach(runCase);
   });
 
+  describe("Registration Events", () => {
+    registrationCases.forEach(runCase);
+  });
+
   describe("Clicked / Interaction Events", () => {
     clickCases.forEach(runCase);
   });
@@ -392,6 +420,7 @@ describe("Amplitude Tier-1 Analytics", () => {
     videoCases.forEach(runCase);
   });
 });
+
 
 
 
