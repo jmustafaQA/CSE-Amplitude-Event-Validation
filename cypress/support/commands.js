@@ -1,7 +1,6 @@
 // cypress/support/commands.js
 
-// Safely attempts to parse JSON without throwing.
-// Used when intercepting Amplitude request payloads.
+// Safely parses JSON strings without throwing.
 function tryParseJson(value) {
   try {
     return JSON.parse(value);
@@ -10,23 +9,17 @@ function tryParseJson(value) {
   }
 }
 
-// Returns true if the request URL matches Amplitude HTTP API endpoints.
+// Determines whether a request URL is the Amplitude HTTP v2 ingestion endpoint.
 function isAmplitudeHttpApi(url) {
   return typeof url === "string" && url.includes("api2.amplitude.com/2/");
 }
 
-// Pushes captured Amplitude payloads into a shared in-memory store
-// attached to the window object during the test run.
+// Stores captured Amplitude requests and individual events on window.
 function pushCapturedEvents(win, payload) {
-  win.__capturedAmplitude = win.__capturedAmplitude || {
-    requests: [],
-    events: [],
-  };
+  win.__capturedAmplitude = win.__capturedAmplitude || { requests: [], events: [] };
 
-  // Store full request payload for debugging if needed
   win.__capturedAmplitude.requests.push(payload);
 
-  // Extract individual events from payload.events array
   if (payload && Array.isArray(payload.events)) {
     payload.events.forEach((evt) => {
       win.__capturedAmplitude.events.push(evt);
@@ -34,14 +27,13 @@ function pushCapturedEvents(win, payload) {
   }
 }
 
-// Installs network interception hooks BEFORE the page loads.
-// Wraps fetch and sendBeacon to capture outbound Amplitude traffic.
+// Installs network interception for fetch, sendBeacon, and XMLHttpRequest.
+// This ensures Amplitude events are captured regardless of transport mechanism.
 function installAmplitudeNetworkCapture(win) {
-  // Reset storage for each visit
   win.__capturedAmplitude = { requests: [], events: [] };
 
-  // Patch window.fetch
   const originalFetch = win.fetch;
+
   if (typeof originalFetch === "function") {
     win.fetch = function (...args) {
       try {
@@ -51,6 +43,7 @@ function installAmplitudeNetworkCapture(win) {
         if (isAmplitudeHttpApi(url)) {
           const body = init?.body;
           const parsed = typeof body === "string" ? tryParseJson(body) : null;
+
           if (parsed) pushCapturedEvents(win, parsed);
         }
       } catch {}
@@ -59,8 +52,8 @@ function installAmplitudeNetworkCapture(win) {
     };
   }
 
-  // Patch navigator.sendBeacon
   const originalBeacon = win.navigator?.sendBeacon;
+
   if (typeof originalBeacon === "function") {
     win.navigator.sendBeacon = function (url, data) {
       try {
@@ -73,17 +66,75 @@ function installAmplitudeNetworkCapture(win) {
       return originalBeacon.apply(this, arguments);
     };
   }
+
+  const OriginalXHR = win.XMLHttpRequest;
+
+  if (typeof OriginalXHR === "function") {
+    function PatchedXHR() {
+      const xhr = new OriginalXHR();
+
+      let requestUrl = "";
+      let requestMethod = "";
+
+      const originalOpen = xhr.open;
+      const originalSend = xhr.send;
+
+      xhr.open = function (method, url, ...rest) {
+        requestMethod = method;
+        requestUrl = url;
+        return originalOpen.call(this, method, url, ...rest);
+      };
+
+      xhr.send = function (body) {
+        try {
+          if (
+            requestMethod &&
+            String(requestMethod).toUpperCase() === "POST" &&
+            isAmplitudeHttpApi(requestUrl) &&
+            typeof body === "string"
+          ) {
+            const parsed = tryParseJson(body);
+            if (parsed) pushCapturedEvents(win, parsed);
+          }
+        } catch {}
+
+        return originalSend.call(this, body);
+      };
+
+      return xhr;
+    }
+
+    win.XMLHttpRequest = PatchedXHR;
+  }
 }
 
-// Sets OneTrust consent cookies so analytics events are not blocked.
-// Required before visiting pages.
+// Returns hostname from Cypress baseUrl if defined.
+function getBaseUrlHost() {
+  try {
+    const baseUrl = Cypress.config("baseUrl");
+    if (!baseUrl) return null;
+    return new URL(baseUrl).hostname;
+  } catch {
+    return null;
+  }
+}
+
+// Returns domains where OneTrust consent cookies should be applied.
+// Supports qa, www, and any configured baseUrl host.
+function getConsentDomains() {
+  const domains = new Set(["qa.commonsense.org", "www.commonsense.org"]);
+  const baseHost = getBaseUrlHost();
+
+  if (baseHost) domains.add(baseHost);
+
+  return Array.from(domains);
+}
+
+// Sets OneTrust cookies to enable analytics tracking before page load.
+// Prevents Amplitude events from being blocked by consent gating.
 Cypress.Commands.add("setOneTrustAnalyticsConsent", () => {
   const now = new Date();
-
-  cy.setCookie("OptanonAlertBoxClosed", "true", {
-    domain: "qa.commonsense.org",
-    secure: true,
-  });
+  const domains = getConsentDomains();
 
   const consentValue =
     "isIABGlobal=false" +
@@ -96,113 +147,113 @@ Cypress.Commands.add("setOneTrustAnalyticsConsent", () => {
     encodeURIComponent("C0001:1,C0002:1") +
     "&AwaitingReconsent=false";
 
-  cy.setCookie("OptanonConsent", consentValue, {
-    domain: "qa.commonsense.org",
-    secure: true,
-  });
-
-  cy.setCookie("OptanonActiveGroups", ",C0001,C0002,", {
-    domain: "qa.commonsense.org",
-    secure: true,
+  domains.forEach((domain) => {
+    cy.setCookie("OptanonAlertBoxClosed", "true", { domain, secure: true });
+    cy.setCookie("OptanonConsent", consentValue, { domain, secure: true });
+    cy.setCookie("OptanonActiveGroups", ",C0001,C0002,", { domain, secure: true });
   });
 });
 
-// Visits a page and installs network capture before load.
-// Also asserts that at least one Amplitude request occurred.
-Cypress.Commands.add("visitWithAmplitudeCapture", (path) => {
-  cy.intercept(
-    {
-      method: "POST",
-      url: /https:\/\/api2\.amplitude\.com\/2\/.*/,
-    }
-  ).as("amplitudeHttpApi");
+// Visits a page and installs Amplitude capture before any scripts execute.
+Cypress.Commands.add("visitWithAmplitudeCapture", (path, visitOptions = {}) => {
+  const userOnBeforeLoad = visitOptions.onBeforeLoad;
 
   cy.visit(path, {
-    onBeforeLoad: (win) => {
+    ...visitOptions,
+    onBeforeLoad(win) {
       installAmplitudeNetworkCapture(win);
+
+      if (typeof userOnBeforeLoad === "function") {
+        userOnBeforeLoad(win);
+      }
     },
   });
-
-  // Ensures real Amplitude traffic occurred in this run
-  cy.wait("@amplitudeHttpApi", { timeout: 60000 });
 });
 
-// Returns all captured Amplitude events for this page session.
-Cypress.Commands.add("getCapturedAmplitudeEvents", () => {
+// Returns captured Amplitude events.
+// Can optionally filter by eventType and sort newest-first.
+Cypress.Commands.add("getCapturedAmplitudeEvents", (eventType = null, newestFirst = false) => {
   return cy.window({ log: false }).then((win) => {
     const cap = win.__capturedAmplitude || { events: [] };
-    return cap.events || [];
+    let events = cap.events || [];
+
+    if (eventType) {
+      events = events.filter((e) => e?.event_type === eventType);
+    }
+
+    if (newestFirst) {
+      events = [...events].sort((a, b) => {
+        const at = typeof a?.time === "number" ? a.time : 0;
+        const bt = typeof b?.time === "number" ? b.time : 0;
+        return bt - at;
+      });
+    }
+
+    return events;
   });
 });
 
-// Produces a minimal debug summary of an event.
-// Used only in error output when predicates fail.
+// Provides a minimal event summary for debug output.
 function summarizeEvent(evt) {
   const p = evt?.event_properties || {};
   return {
     event_type: evt?.event_type,
+    time: evt?.time,
     page_url_path: p.page_url_path,
     page_url_full: p.page_url_full,
-    element_text: p.element_text || p["[Amplitude] Element Text"],
     interaction_type: p.interaction_type,
-    video_title: p.video_title,
-    video_url: p.video_url,
-    player_state: p.player_state,
-    play_reason: p.play_reason,
-    play_initiator: p.play_initiator,
   };
 }
 
-// Polls captured events until a matching eventType is found.
-// Optionally validates against a predicate.
-// Throws detailed error if event is missing or predicate fails.
-Cypress.Commands.add(
-  "waitForAmplitudeEvent",
-  (eventType, predicate = null, timeoutMs = 60000) => {
-    const start = Date.now();
+// Waits for a specific Amplitude event.
+// Returns the most recent matching event when multiple exist.
+Cypress.Commands.add("waitForAmplitudeEvent", (eventType, predicate = null, timeoutMs = 60000) => {
+  const start = Date.now();
 
-    const poll = () => {
-      return cy.getCapturedAmplitudeEvents().then((events) => {
-        const matches = events.filter((e) => e?.event_type === eventType);
+  const poll = () => {
+    return cy.getCapturedAmplitudeEvents().then((events) => {
+      const matches = events.filter((e) => e?.event_type === eventType);
 
-        const filtered =
-          typeof predicate === "function"
-            ? matches.filter((e) => {
-                try {
-                  return !!predicate(e);
-                } catch {
-                  return false;
-                }
-              })
-            : matches;
+      const filtered =
+        typeof predicate === "function"
+          ? matches.filter((e) => {
+              try {
+                return !!predicate(e);
+              } catch {
+                return false;
+              }
+            })
+          : matches;
 
-        if (filtered.length > 0) return filtered[0];
+      if (filtered.length > 0) {
+        return filtered[filtered.length - 1];
+      }
 
-        if (Date.now() - start > timeoutMs) {
-          const seen = [...new Set(events.map((e) => e?.event_type).filter(Boolean))];
+      if (Date.now() - start > timeoutMs) {
+        const seen = [...new Set(events.map((e) => e?.event_type).filter(Boolean))];
 
-          if (matches.length > 0 && typeof predicate === "function") {
-            const summary = summarizeEvent(matches[0]);
-            throw new Error(
-              `Amplitude event captured but predicate did not match: ${eventType}. ` +
-                `Captured ${matches.length} ${eventType} event(s). ` +
-                `Seen: ${seen.join(", ") || "(none)"} ` +
-                `First ${eventType} summary: ${JSON.stringify(summary)}`
-            );
-          }
+        if (matches.length > 0 && typeof predicate === "function") {
+          const summary = summarizeEvent(matches[matches.length - 1]);
 
           throw new Error(
-            `Amplitude event not captured: ${eventType}. Seen: ${seen.join(", ") || "(none)"}`
+            `Amplitude event captured but predicate did not match: ${eventType}. ` +
+              `Captured ${matches.length} event(s). ` +
+              `Seen: ${seen.join(", ") || "(none)"} ` +
+              `Last summary: ${JSON.stringify(summary)}`
           );
         }
 
-        return cy.wait(500, { log: false }).then(poll);
-      });
-    };
+        throw new Error(
+          `Amplitude event not captured: ${eventType}. Seen: ${seen.join(", ") || "(none)"}`
+        );
+      }
 
-    return poll();
-  }
-);
+      return cy.wait(500, { log: false }).then(poll);
+    });
+  };
+
+  return poll();
+});
 
 
 
