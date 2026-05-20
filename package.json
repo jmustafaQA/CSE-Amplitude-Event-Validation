@@ -4,7 +4,9 @@
   "description": "Cypress-based framework for validating **Amplitude Tier-1 analytics events** on Common Sense Education pages.",
   "main": "cypress.config.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node cli.js",
+    "test": "cypress run",
+    "test:save-baseline": "cypress run --env saveBaseline=true"
   },
   "repository": {
     "type": "git",
@@ -18,6 +20,6 @@
   },
   "homepage": "https://github.com/jmustafaQA/CSE-Amplitude-Event-Validation#readme",
   "devDependencies": {
-    "cypress": "^15.10.0"
+    "cypress": "^13.17.0"
   }
 }

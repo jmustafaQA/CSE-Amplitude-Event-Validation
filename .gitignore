@@ -1,3 +1,6 @@
+# Cypress run reports (keep baseline, ignore timestamped runs)
+reports/run-*.md
+
 # Logs
 logs
 *.log
