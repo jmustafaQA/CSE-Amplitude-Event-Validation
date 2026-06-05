@@ -325,14 +325,12 @@ Cypress.Commands.add("getCapturedAmplitudeEvents", (eventType = null, newestFirs
   });
 });
 
-// Provides a minimal event summary for debug output.
+// Returns the full event properties for debug output on predicate failures.
 function summarizeEvent(evt) {
   const p = evt?.event_properties || {};
-  return {
-    event_type: evt?.event_type,
-    page_url_path: p.page_url_path,
-    interaction_type: p.interaction_type,
-  };
+  const out = { event_type: evt?.event_type };
+  Object.keys(p).forEach((k) => { if (p[k] !== undefined) out[k] = p[k]; });
+  return out;
 }
 
 // Builds the diagnostic footer appended to timeout error messages.

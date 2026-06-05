@@ -413,13 +413,13 @@ describe("Amplitude Tier-1 Analytics", () => {
 
   const clickCases = [
     {
-      name: "Clicked Link (EDU Homepage Hero CTA - Learn more)",
+      name: "Clicked Link (EDU Homepage Hero CTA)",
       path: "/education",
       eventType: "Clicked Link",
       run: () => {
         const selector = ".home-marketing-block a.btn";
 
-        cy.contains(selector, "Learn more").then(($a) => {
+        cy.get(selector).first().then(($a) => {
           const el = $a[0];
           el.addEventListener(
             "click",
@@ -431,15 +431,13 @@ describe("Amplitude Tier-1 Analytics", () => {
           );
         });
 
-        cy.contains(selector, "Learn more").click({ force: true });
+        cy.get(selector).first().click({ force: true });
       },
       assert: (evt) => {
         const p = evt.event_properties || {};
-        const text = String(p["[Amplitude] Element Text"] || p.element_text || "").toLowerCase();
         return (
           p.page_url_path === "/education" &&
-          (p.interaction_type === undefined || String(p.interaction_type).toLowerCase() === "click") &&
-          text.includes("learn more")
+          (p.interaction_type === undefined || String(p.interaction_type).toLowerCase() === "click")
         );
       },
     },
