@@ -3,7 +3,6 @@ const fs = require("fs");
 const path = require("path");
 
 const REPORTS_DIR = path.join(__dirname, "reports");
-const BASELINE_FILE = path.join(REPORTS_DIR, "baseline.json");
 
 function ensureReportsDir() {
   if (!fs.existsSync(REPORTS_DIR)) {
@@ -60,7 +59,7 @@ function fmtDur(ms) {
   return ms ? `${(ms / 1000).toFixed(2)}s` : "—";
 }
 
-function buildMarkdown(summary, baseline) {
+function buildMarkdown(summary) {
   const totalDur = (summary.durationMs / 1000).toFixed(1);
   const pass = summary.totalPassed;
   const fail = summary.totalFailed;
@@ -90,53 +89,6 @@ function buildMarkdown(summary, baseline) {
   L.push(`| ⏭️ Skipped | ${skip} |`);
   L.push(`| ⏱️ Duration | ${totalDur}s |`);
   L.push(``);
-
-  // ── Baseline comparison ───────────────────────────────────────────────────
-  if (baseline) {
-    const pDiff = pass - baseline.totalPassed;
-    const fDiff = fail - baseline.totalFailed;
-    const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
-    const pArrow = pDiff > 0 ? "⬆️" : pDiff < 0 ? "⬇️" : "➡️";
-    const fArrow = fDiff > 0 ? "⬆️" : fDiff < 0 ? "⬇️" : "➡️";
-    const baseDate = new Date(baseline.timestamp).toLocaleString("en-US", {
-      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-    });
-
-    const baselineMap = {};
-    baseline.tests.forEach((t) => { baselineMap[t.title] = t.state; });
-
-    const regressions = summary.tests.filter(
-      (t) => baselineMap[t.title] === "passed" && t.state === "failed"
-    );
-    const fixes = summary.tests.filter(
-      (t) => baselineMap[t.title] === "failed" && t.state === "passed"
-    );
-
-    L.push(`## 📊 Baseline Comparison`);
-    L.push(``);
-    L.push(`> Baseline from **${baseDate}**`);
-    L.push(``);
-    L.push(`| Metric | Baseline | Now | Change |`);
-    L.push(`|--------|----------|-----|--------|`);
-    L.push(`| Passed | ${baseline.totalPassed} | ${pass} | ${pArrow} ${sign(pDiff)} |`);
-    L.push(`| Failed | ${baseline.totalFailed} | ${fail} | ${fArrow} ${sign(fDiff)} |`);
-    L.push(``);
-
-    if (regressions.length > 0) {
-      L.push(`### 🔴 Regressions (${regressions.length})`);
-      regressions.forEach((t) => L.push(`- ${parseTitle(t.title).name}`));
-      L.push(``);
-    }
-    if (fixes.length > 0) {
-      L.push(`### 🟢 Fixed since baseline (${fixes.length})`);
-      fixes.forEach((t) => L.push(`- ${parseTitle(t.title).name}`));
-      L.push(``);
-    }
-    if (regressions.length === 0 && fixes.length === 0) {
-      L.push(`> ✅ No change vs baseline.`);
-      L.push(``);
-    }
-  }
 
   // ── Results grouped by section ────────────────────────────────────────────
   const sections = {};
@@ -196,7 +148,7 @@ function buildMarkdown(summary, baseline) {
   return L.join("\n") + "\n";
 }
 
-function printReport(summary, baseline) {
+function printReport(summary) {
   const dur = (summary.durationMs / 1000).toFixed(1);
   const pass = summary.totalPassed;
   const fail = summary.totalFailed;
@@ -208,41 +160,6 @@ function printReport(summary, baseline) {
   console.log(`  Base URL      : ${summary.baseUrl}`);
   console.log(`  Status        : ${status}  (${pass}/${total} passed, ${fail} failed)`);
   console.log(`  Duration      : ${dur}s`);
-
-  if (baseline) {
-    const pDiff = pass - baseline.totalPassed;
-    const fDiff = fail - baseline.totalFailed;
-    const baselineDate = new Date(baseline.timestamp).toLocaleString();
-
-    console.log(`\n  Baseline from : ${baselineDate}`);
-    console.log(`  Passed        : ${pass}  (${pDiff >= 0 ? "+" : ""}${pDiff} vs baseline)`);
-    console.log(`  Failed        : ${fail}  (${fDiff >= 0 ? "+" : ""}${fDiff} vs baseline)`);
-
-    const baselineMap = {};
-    baseline.tests.forEach((t) => { baselineMap[t.title] = t.state; });
-
-    const regressions = summary.tests.filter(
-      (t) => baselineMap[t.title] === "passed" && t.state === "failed"
-    );
-    const fixes = summary.tests.filter(
-      (t) => baselineMap[t.title] === "failed" && t.state === "passed"
-    );
-
-    if (regressions.length > 0) {
-      console.log(`\n  Regressions (${regressions.length}):`);
-      regressions.forEach((t) => console.log(`    ✗ ${parseTitle(t.title).name}`));
-    }
-    if (fixes.length > 0) {
-      console.log(`\n  Fixed since baseline (${fixes.length}):`);
-      fixes.forEach((t) => console.log(`    ✓ ${parseTitle(t.title).name}`));
-    }
-    if (regressions.length === 0 && fixes.length === 0) {
-      console.log("\n  No change vs baseline.");
-    }
-  } else {
-    console.log("\n  No baseline saved yet. Run: npm run test:save-baseline");
-  }
-
   console.log("========================================\n");
 }
 
@@ -267,29 +184,11 @@ module.exports = {
         const timestamp = new Date().toISOString();
         const summary = buildSummary(results, timestamp, config.baseUrl);
 
-        // Load baseline before generating the report so it appears in the file
-        let baseline = null;
-        if (fs.existsSync(BASELINE_FILE)) {
-          try {
-            baseline = JSON.parse(fs.readFileSync(BASELINE_FILE, "utf8"));
-          } catch {
-            baseline = null;
-          }
-        }
-
-        // Save as new baseline if flag is set
-        if (config.env && config.env.saveBaseline) {
-          fs.writeFileSync(BASELINE_FILE, JSON.stringify(summary, null, 2));
-          console.log("\n  Baseline updated.");
-          baseline = null;
-        }
-
-        // Save timestamped markdown report
         const safeTs = timestamp.replace(/:/g, "-");
         const reportFile = path.join(REPORTS_DIR, `run-${safeTs}.md`);
-        fs.writeFileSync(reportFile, buildMarkdown(summary, baseline));
+        fs.writeFileSync(reportFile, buildMarkdown(summary));
 
-        printReport(summary, baseline);
+        printReport(summary);
       });
 
       return config;

@@ -5,8 +5,7 @@
   "main": "cypress.config.js",
   "scripts": {
     "start": "node cli.js",
-    "test": "cypress run",
-    "test:save-baseline": "cypress run --env saveBaseline=true"
+    "test": "cypress run"
   },
   "repository": {
     "type": "git",
