@@ -442,9 +442,10 @@ describe("Amplitude Tier-1 Analytics", () => {
       },
     },
     {
-      name: 'Clicked Element (UK DIY page - "Play Video" hero button)',
+      name: "Played Video (UK DIY page - Hero Video)",
       path: "/education/uk/digital-citizenship",
-      eventType: "Clicked Element",
+      eventType: "Played Video",
+      timeoutMs: 60000,
       visitOptions: {
         onBeforeLoad: (win) => {
           win.addEventListener("error", (e) => {
@@ -455,18 +456,20 @@ describe("Amplitude Tier-1 Analytics", () => {
         },
       },
       run: () => {
-        cy.get("span[id^='video-modal-']")
-          .first()
-          .should("exist")
-          .click({ force: true });
+        cy.get("span[id^='video-modal-']").first().should("exist").click({ force: true });
+        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
       },
       assert: (evt) => {
         const p = evt.event_properties || {};
-        const text = String(p.element_text || p["[Amplitude] Element Text"] || "").toLowerCase();
         return (
           p.page_url_path === "/education/uk/digital-citizenship" &&
-          String(p.interaction_type || "").toLowerCase() === "click" &&
-          text.includes("play video")
+          p.page_http_status_code === 200 &&
+          p.source_org === "Common Sense Education" &&
+          p.cse_content_type === "diy_page" &&
+          p.cse_entity_id === 5091193 &&
+          (p.video_provider ? p.video_provider === "html5" : true) &&
+          (p.player_state ? ["playing", "play"].includes(String(p.player_state).toLowerCase()) : true) &&
+          (p.play_initiator ? p.play_initiator === "click" : true)
         );
       },
     },
@@ -486,6 +489,7 @@ describe("Amplitude Tier-1 Analytics", () => {
       run: () => {
         dismissCtaModal();
         cy.get('button[id^="video-modal-"].preview-teaser-link').first().should("be.visible").click({ force: true });
+        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
       },
       assert: (evt) => {
         const p = evt.event_properties || {};
@@ -522,6 +526,7 @@ describe("Amplitude Tier-1 Analytics", () => {
         cy.get('button[id^="video-modal-"].preview-teaser-link').first().should("be.visible").click({ force: true });
         cy.get("video.vjs-tech", { timeout: 60000 }).should("exist");
         cy.get("button.vjs-big-play-button", { timeout: 30000 }).should("be.visible").click({ force: true });
+        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
       },
       assert: (evt) => {
         const p = evt.event_properties || {};
@@ -557,6 +562,7 @@ describe("Amplitude Tier-1 Analytics", () => {
           expect(v.paused, "video paused").to.eq(false);
           expect(v.currentTime, "video currentTime").to.be.greaterThan(0);
         });
+        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
       },
       assert: (evt) => {
         const p = evt.event_properties || {};
@@ -596,6 +602,7 @@ describe("Amplitude Tier-1 Analytics", () => {
         cy.get("button.vjs-big-play-button", { timeout: 30000 }).should("be.visible").click({ force: true });
 
         cy.get("button.vjs-play-control", { timeout: 30000 }).should("be.visible").click({ force: true });
+        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
       },
       assert: (evt) => {
         const p = evt.event_properties || {};
