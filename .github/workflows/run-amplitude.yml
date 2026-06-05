@@ -24,6 +24,24 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Pre-flight checks
+        run: |
+          URL="${{ inputs.base_url }}"
+          echo "── Target URL ────────────────────────────────────"
+          status=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 "$URL" || echo "000")
+          if [[ "$status" =~ ^(2|3)[0-9]{2}$ ]]; then
+            echo "✓ $URL is reachable (HTTP $status)"
+          else
+            echo "::warning::$URL returned HTTP $status — tests may fail"
+          fi
+
+          echo "── Spec file check ───────────────────────────────"
+          if [ ! -f "cypress/e2e/amplitude_tier1.cy.js" ]; then
+            echo "::error::cypress/e2e/amplitude_tier1.cy.js not found"
+            exit 1
+          fi
+          echo "✓ amplitude_tier1.cy.js present"
+
       - name: Install dependencies
         run: npm ci
 
