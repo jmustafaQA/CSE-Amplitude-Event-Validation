@@ -181,12 +181,55 @@ module.exports = {
       on("after:run", (results) => {
         ensureReportsDir();
 
-        const timestamp = new Date().toISOString();
-        const summary = buildSummary(results, timestamp, config.baseUrl);
+        // PT-formatted timestamp — matches Automation naming: run_YYYY-MM-DDTHH-MM-SS
+        const timestamp = new Date()
+          .toLocaleString("sv-SE", { timeZone: "America/Los_Angeles" })
+          .replace(" ", "T")
+          .replace(/:/g, "-");
 
-        const safeTs = timestamp.replace(/:/g, "-");
-        const reportFile = path.join(REPORTS_DIR, `run-${safeTs}.md`);
-        fs.writeFileSync(reportFile, buildMarkdown(summary));
+        const summary = buildSummary(results, new Date().toISOString(), config.baseUrl);
+
+        fs.writeFileSync(path.join(REPORTS_DIR, `run_${timestamp}.md`), buildMarkdown(summary));
+
+        // Meta.json sidecar — consumed by the launcher's push-results sync
+        const failures = [];
+        if (results.runs) {
+          results.runs.forEach((run) => {
+            const specName = path.basename((run.spec || {}).relative || (run.spec || {}).name || "amplitude_tier1.cy.js");
+            (run.tests || []).forEach((test) => {
+              if (test.state === "failed") {
+                failures.push({
+                  spec: specName,
+                  title: (test.title || []).join(" > "),
+                  project: "chrome",
+                  error: (test.displayError || "").split("\n")[0],
+                  retries: 0,
+                });
+              }
+            });
+          });
+        }
+        const total    = results.totalTests    || 0;
+        const passed   = results.totalPassed   || 0;
+        const failed   = results.totalFailed   || 0;
+        const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
+        fs.writeFileSync(
+          path.join(REPORTS_DIR, `run_${timestamp}.meta.json`),
+          JSON.stringify({
+            timestamp,
+            environment: process.env.CYPRESS_ENV_NAME || "QA",
+            baseUrl: config.baseUrl,
+            stats: {
+              passed, failed, flaky: 0,
+              skipped: results.totalPending || 0,
+              total, passRate,
+              elapsedMs: results.totalDuration || 0,
+            },
+            failures,
+            flakyTests: [],
+            highRetryTests: [],
+          }, null, 2)
+        );
 
         printReport(summary);
       });
