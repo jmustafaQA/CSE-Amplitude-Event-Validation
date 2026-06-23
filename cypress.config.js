@@ -165,7 +165,7 @@ function printReport(summary) {
 
 module.exports = {
   e2e: {
-    baseUrl: "https://qa.commonsense.org",
+    baseUrl: "https://www.commonsense.org",
     setupNodeEvents(on, config) {
       on("task", {
         log(message) {

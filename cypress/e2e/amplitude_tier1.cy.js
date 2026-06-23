@@ -747,6 +747,42 @@ describe("CSE Amplitude Event Validation — Tier 1", () => {
         );
       },
     },
+    {
+      name: "Opened Lesson Slide Modal (What Is Media?)",
+      path: "/education/digital-literacy/what-is-media",
+      eventType: "Opened Lesson Slide Modal",
+      timeoutMs: 30000,
+      run: () => {
+        cy.get('[data-ampl-media-asset-type="Slideshow"]').first().should("exist").click({ force: true });
+        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
+      },
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/digital-literacy/what-is-media" &&
+          p.media_type === "Slideshow" &&
+          optionalEq(p, "media_id", "2039540")
+        );
+      },
+    },
+    {
+      name: "Opened Student Handout Modal (What Is Media?)",
+      path: "/education/digital-literacy/what-is-media",
+      eventType: "Opened Student Handout Modal",
+      timeoutMs: 30000,
+      run: () => {
+        cy.get('[data-ampl-media-asset-type="Remote Document"]').first().should("exist").click({ force: true });
+        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
+      },
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/digital-literacy/what-is-media" &&
+          p.media_type === "Remote Document" &&
+          optionalEq(p, "media_id", "2039539")
+        );
+      },
+    },
   ];
 
   const videoCases = [
