@@ -1,6 +1,6 @@
 // cypress/e2e/amplitude_tier1.cy.js
 
-describe("Amplitude Tier-1 Analytics", () => {
+describe("CSE Amplitude Event Validation — Tier 1", () => {
   beforeEach(() => {
     cy.setOneTrustAnalyticsConsent();
   });
