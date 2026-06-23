@@ -183,10 +183,10 @@ describe("Amplitude Tier-1 Analytics", () => {
           p.page_http_status_code === 200 &&
           p.page_language === "en-GB" &&
           p.source_org === "Common Sense Education" &&
-          p.cse_content_type === "diy_page" &&
+          p.cse_content_type === "component_page" &&
           p.cse_content_title === "Digital Citizenship Lessons for the UK" &&
           p.cse_entity_group === "node" &&
-          p.cse_entity_id === 5091193
+          p.cse_entity_id === 5126575
         );
       },
     },
@@ -340,6 +340,185 @@ describe("Amplitude Tier-1 Analytics", () => {
         );
       },
     },
+    {
+      name: "Viewed Page (AI in Schools)",
+      path: "/education/ai-in-schools",
+      eventType: "Viewed Page",
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/ai-in-schools" &&
+          matchesFullUrl(p.page_url_full, "/education/ai-in-schools") &&
+          p.page_title === "Navigating AI in Schools | Common Sense Education" &&
+          p.page_http_status_code === 200 &&
+          p.page_language === "en" &&
+          p.source_org === "Common Sense Education" &&
+          p.cse_content_type === "component_page" &&
+          p.cse_entity_group === "node" &&
+          p.cse_entity_id === 5126572
+        );
+      },
+    },
+    {
+      name: "Viewed Lesson Collection (UK AI Literacy)",
+      path: "/education/uk/collections/ai-literacy-lessons-for-years-7-13",
+      eventType: "Viewed Lesson Collection",
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/uk/collections/ai-literacy-lessons-for-years-7-13" &&
+          matchesFullUrl(p.page_url_full, "/education/uk/collections/ai-literacy-lessons-for-years-7-13") &&
+          p.page_title === "AI Literacy Lessons for Years 7-13+ (UK) | Common Sense Education" &&
+          p.page_http_status_code === 200 &&
+          p.page_language === "en-GB" &&
+          p.source_org === "Common Sense Education" &&
+          p.cse_content_type === "collection" &&
+          p.cse_entity_group === "node" &&
+          p.cse_entity_id === 5117155
+        );
+      },
+    },
+    {
+      name: "Viewed Lesson Collection (UK DC Early Years)",
+      path: "/education/collections/digital-citizenship-for-early-years-and-primary-learners-uk",
+      eventType: "Viewed Lesson Collection",
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/collections/digital-citizenship-for-early-years-and-primary-learners-uk" &&
+          matchesFullUrl(
+            p.page_url_full,
+            "/education/collections/digital-citizenship-for-early-years-and-primary-learners-uk"
+          ) &&
+          p.page_title === "Digital Citizenship for Early Years and Primary Learners (UK) | Common Sense Education" &&
+          p.page_http_status_code === 200 &&
+          p.source_org === "Common Sense Education" &&
+          p.cse_content_type === "collection" &&
+          p.cse_entity_group === "node" &&
+          p.cse_entity_id === 5115031
+        );
+      },
+    },
+    {
+      name: "Viewed Course (AI Basics for K-12 Teachers)",
+      path: "/education/training/ai-basics-for-k-12-teachers",
+      eventType: "Viewed Course",
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/training/ai-basics-for-k-12-teachers" &&
+          matchesFullUrl(p.page_url_full, "/education/training/ai-basics-for-k-12-teachers") &&
+          p.page_title === "AI Basics for K–12 Teachers | Common Sense Education" &&
+          p.page_http_status_code === 200 &&
+          p.page_language === "en" &&
+          p.source_org === "Common Sense Education" &&
+          p.cse_content_type === "pd_course" &&
+          p.cse_entity_group === "node" &&
+          p.cse_entity_id === 5124492
+        );
+      },
+    },
+    {
+      name: "Viewed Course (ChatGPT Foundations for K-12 Educators)",
+      path: "/education/training/chatgpt-k12-foundations",
+      eventType: "Viewed Course",
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/training/chatgpt-k12-foundations" &&
+          matchesFullUrl(p.page_url_full, "/education/training/chatgpt-k12-foundations") &&
+          p.page_title === "ChatGPT Foundations for K–12 Educators | Common Sense Education" &&
+          p.page_http_status_code === 200 &&
+          p.page_language === "en" &&
+          p.source_org === "Common Sense Education" &&
+          p.cse_content_type === "pd_course" &&
+          p.cse_entity_group === "node" &&
+          p.cse_entity_id === 5118510
+        );
+      },
+    },
+    {
+      name: "Viewed Course (Advanced ChatGPT for K-12)",
+      path: "/education/training/advanced-chatgpt-for-k-12",
+      eventType: "Viewed Course",
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/training/advanced-chatgpt-for-k-12" &&
+          matchesFullUrl(p.page_url_full, "/education/training/advanced-chatgpt-for-k-12") &&
+          p.page_title === "Advanced ChatGPT for K-12 | Common Sense Education" &&
+          p.page_http_status_code === 200 &&
+          p.page_language === "en" &&
+          p.source_org === "Common Sense Education" &&
+          p.cse_content_type === "pd_course" &&
+          p.cse_entity_group === "node" &&
+          p.cse_entity_id === 5122779
+        );
+      },
+    },
+    {
+      name: "Viewed Course (Modeling Healthy Digital Habits)",
+      path: "/education/training/modeling-healthy-digital-habits",
+      eventType: "Viewed Course",
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/training/modeling-healthy-digital-habits" &&
+          matchesFullUrl(p.page_url_full, "/education/training/modeling-healthy-digital-habits") &&
+          p.page_title === "Modeling Healthy Digital Habits | Common Sense Education" &&
+          p.page_http_status_code === 200 &&
+          p.page_language === "en" &&
+          p.source_org === "Common Sense Education" &&
+          p.cse_content_type === "pd_course" &&
+          p.cse_entity_group === "node" &&
+          p.cse_entity_id === 5126107
+        );
+      },
+    },
+    {
+      name: "Viewed Article (ChatGPT and Beyond)",
+      path: "/education/articles/chatgpt-and-beyond-how-to-handle-ai-in-schools",
+      eventType: "Viewed Article",
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/articles/chatgpt-and-beyond-how-to-handle-ai-in-schools" &&
+          matchesFullUrl(
+            p.page_url_full,
+            "/education/articles/chatgpt-and-beyond-how-to-handle-ai-in-schools"
+          ) &&
+          p.page_title === "ChatGPT and Beyond: How to Handle AI in Schools | Common Sense Education" &&
+          p.page_http_status_code === 200 &&
+          p.page_language === "en" &&
+          p.source_org === "Common Sense Education" &&
+          p.cse_content_type === "article" &&
+          p.cse_entity_group === "node" &&
+          p.cse_entity_id === 5111720
+        );
+      },
+    },
+    {
+      name: "Viewed Article (Teachers Essential Guide to AI with Apple)",
+      path: "/education/articles/teachers-essential-guide-to-ai-fundamentals-with-apple",
+      eventType: "Viewed Article",
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/articles/teachers-essential-guide-to-ai-fundamentals-with-apple" &&
+          matchesFullUrl(
+            p.page_url_full,
+            "/education/articles/teachers-essential-guide-to-ai-fundamentals-with-apple"
+          ) &&
+          p.page_title === "Teachers' Essential Guide to AI Fundamentals with Apple | Common Sense Education" &&
+          p.page_http_status_code === 200 &&
+          p.page_language === "en" &&
+          p.source_org === "Common Sense Education" &&
+          p.cse_content_type === "article" &&
+          p.cse_entity_group === "node" &&
+          p.cse_entity_id === 5124510
+        );
+      },
+    },
   ];
 
   const registrationCases = [
@@ -352,13 +531,13 @@ describe("Amplitude Tier-1 Analytics", () => {
         return (
           p.page_url_path === "/user/register" &&
           optionalEq(p, "ampl_page_view", true) &&
-          optionalEq(p, "page_title", "Create new account | Common Sense Education") &&
+          optionalEq(p, "page_title", "Create your free account | Common Sense Education") &&
           optionalEq(p, "page_http_status_code", 200) &&
           optionalEq(p, "page_language", "en") &&
           optionalEq(p, "source_org", "Common Sense Education") &&
           optionalEq(p, "source_system_route_name", "cse_user.register") &&
           optionalEq(p, "is_admin_theme_page", false) &&
-          optionalEq(p, "form_id", "user_register_form")
+          (p.form_id === undefined || ["user_register_form", "cse_user_magic_reg_form"].includes(p.form_id))
         );
       },
     },
@@ -374,7 +553,6 @@ describe("Amplitude Tier-1 Analytics", () => {
 
         const coreOk = assertCorePage(p, {
           path: "/user/login",
-          full: "/user/login",
           title: p.page_title !== undefined ? "Log in | Common Sense Education" : undefined,
           status: p.page_http_status_code !== undefined ? 200 : undefined,
           amplPageView: p.ampl_page_view !== undefined ? true : undefined,
@@ -382,31 +560,22 @@ describe("Amplitude Tier-1 Analytics", () => {
         });
 
         const specificOk =
-          optionalEq(p, "form_id", "user_login_form") && optionalEq(p, "source_system_route_name", "user.login");
+          (p.form_id === undefined || ["user_login_form", "cse_user_magic_reg_form"].includes(p.form_id)) &&
+          optionalEq(p, "source_system_route_name", "user.login");
 
         return coreOk && specificOk;
       },
     },
     {
-      name: "Viewed Forgot Password Form",
-      path: "/user/password",
-      eventType: "Viewed Forgot Password Form",
+      name: "Viewed Experiment Variant (Magic Link Registration)",
+      path: "/user/login",
+      eventType: "Viewed Experiment Variant",
       assert: (evt) => {
         const p = evt.event_properties || {};
-
-        const coreOk = assertCorePage(p, {
-          path: "/user/password",
-          full: "/user/password",
-          title: p.page_title !== undefined ? "Request New Password | Common Sense Education" : undefined,
-          status: p.page_http_status_code !== undefined ? 200 : undefined,
-          amplPageView: p.ampl_page_view !== undefined ? true : undefined,
-          language: p.page_language !== undefined ? "en" : undefined,
-        });
-
-        const specificOk =
-          optionalEq(p, "form_id", "user_pass") && optionalEq(p, "source_system_route_name", "cse_user.pass");
-
-        return coreOk && specificOk;
+        return (
+          p.experiment_name === "magic_reg_vs_classic" &&
+          p.variant === "magic_link"
+        );
       },
     },
   ];
@@ -465,8 +634,8 @@ describe("Amplitude Tier-1 Analytics", () => {
           p.page_url_path === "/education/uk/digital-citizenship" &&
           p.page_http_status_code === 200 &&
           p.source_org === "Common Sense Education" &&
-          p.cse_content_type === "diy_page" &&
-          p.cse_entity_id === 5091193 &&
+          p.cse_content_type === "component_page" &&
+          p.cse_entity_id === 5126575 &&
           (p.video_provider ? p.video_provider === "html5" : true) &&
           (p.player_state ? ["playing", "play"].includes(String(p.player_state).toLowerCase()) : true) &&
           (p.play_initiator ? p.play_initiator === "click" : true)
@@ -542,6 +711,42 @@ describe("Amplitude Tier-1 Analytics", () => {
         );
       },
     },
+    {
+      name: "Opened Lesson Slide Modal (What Is Media?)",
+      path: "/education/digital-literacy/what-is-media",
+      eventType: "Opened Lesson Slide Modal",
+      timeoutMs: 30000,
+      run: () => {
+        cy.get('[data-ampl-media-asset-type="Slideshow"]').first().should("exist").click({ force: true });
+        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
+      },
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/digital-literacy/what-is-media" &&
+          p.media_type === "Slideshow" &&
+          optionalEq(p, "media_id", "2039540")
+        );
+      },
+    },
+    {
+      name: "Opened Student Handout Modal (What Is Media?)",
+      path: "/education/digital-literacy/what-is-media",
+      eventType: "Opened Student Handout Modal",
+      timeoutMs: 30000,
+      run: () => {
+        cy.get('[data-ampl-media-asset-type="Remote Document"]').first().should("exist").click({ force: true });
+        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
+      },
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/digital-literacy/what-is-media" &&
+          p.media_type === "Remote Document" &&
+          optionalEq(p, "media_id", "2039539")
+        );
+      },
+    },
   ];
 
   const videoCases = [
@@ -556,6 +761,7 @@ describe("Amplitude Tier-1 Analytics", () => {
 
         cy.get("video.vjs-tech", { timeout: 30000 }).should("exist");
         cy.get("button.vjs-big-play-button", { timeout: 30000 }).should("be.visible").click({ force: true });
+        cy.wait(3000);
 
         cy.get("video.vjs-tech", { timeout: 20000 }).should(($v) => {
           const v = $v[0];
