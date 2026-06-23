@@ -1,5 +1,7 @@
-# Cypress run reports (keep baseline, ignore timestamped runs)
-reports/run-*.md
+# Cypress run reports and screenshots
+reports/run_*.md
+reports/run_*.meta.json
+cypress/screenshots/
 
 # Logs
 logs
