@@ -1,0 +1,74 @@
+{
+  "timestamp": "2026-06-24T12-39-03",
+  "environment": "QA",
+  "baseUrl": "https://qa.commonsense.org",
+  "stats": {
+    "passed": 26,
+    "failed": 8,
+    "flaky": 0,
+    "skipped": 0,
+    "total": 34,
+    "passRate": 76,
+    "elapsedMs": 203901
+  },
+  "failures": [
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Viewed Events > fires \"Viewed Lesson Info\" on /education/uk/digital-citizenship (Viewed Lesson Info (UK Digital Citizenship))",
+      "project": "chrome",
+      "error": "CypressError: `cy.visit()` failed trying to load:",
+      "retries": 0
+    },
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Viewed Events > fires \"Viewed Page\" on /education/ai-in-schools (Viewed Page (AI in Schools))",
+      "project": "chrome",
+      "error": "Error: Amplitude event captured but predicate did not match: Viewed Page. Captured 1 event(s). Seen: $identify, session_start, Viewed Page",
+      "retries": 0
+    },
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Auth Events > fires \"Viewed Experiment Variant\" on /user/login (Viewed Experiment Variant (Magic Link Registration))",
+      "project": "chrome",
+      "error": "Error: Amplitude event not captured: Viewed Experiment Variant. Seen: $identify, session_start, Viewed Login Form",
+      "retries": 0
+    },
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Clicked / Interaction Events > fires \"Played Video\" on /education/uk/digital-citizenship (Played Video (UK DIY page - Hero Video))",
+      "project": "chrome",
+      "error": "CypressError: `cy.visit()` failed trying to load:",
+      "retries": 0
+    },
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Clicked / Interaction Events > fires \"Opened Lesson Slide Modal\" on /education/digital-literacy/what-is-media (Opened Lesson Slide Modal (What Is Media?))",
+      "project": "chrome",
+      "error": "AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-ampl-media-asset-type=\"Slideshow\"]`, but never found it.",
+      "retries": 0
+    },
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Clicked / Interaction Events > fires \"Opened Student Handout Modal\" on /education/digital-literacy/what-is-media (Opened Student Handout Modal (What Is Media?))",
+      "project": "chrome",
+      "error": "AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-ampl-media-asset-type=\"Remote Document\"]`, but never found it.",
+      "retries": 0
+    },
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Clicked / Interaction Events > fires \"Opened Lesson Slide Modal\" on /education/digital-literacy/what-is-media (Opened Lesson Slide Modal (What Is Media?))",
+      "project": "chrome",
+      "error": "AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-ampl-media-asset-type=\"Slideshow\"]`, but never found it.",
+      "retries": 0
+    },
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Clicked / Interaction Events > fires \"Opened Student Handout Modal\" on /education/digital-literacy/what-is-media (Opened Student Handout Modal (What Is Media?))",
+      "project": "chrome",
+      "error": "AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-ampl-media-asset-type=\"Remote Document\"]`, but never found it.",
+      "retries": 0
+    }
+  ],
+  "flakyTests": [],
+  "highRetryTests": []
+}
