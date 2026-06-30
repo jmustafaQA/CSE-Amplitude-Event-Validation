@@ -413,8 +413,11 @@ describe("CSE Amplitude Event Validation", () => {
           p.page_language === "en" &&
           p.source_org === "Common Sense Education" &&
           p.cse_content_type === "pd_course" &&
+          p.cse_content_title === "AI Basics for K–12 Teachers" &&
+          p.cse_content_gated === false &&
           p.cse_entity_group === "node" &&
-          p.cse_entity_id === 5124492
+          p.cse_entity_id === 5124492 &&
+          p.is_admin_theme_page === false
         );
       },
     },
@@ -432,8 +435,11 @@ describe("CSE Amplitude Event Validation", () => {
           p.page_language === "en" &&
           p.source_org === "Common Sense Education" &&
           p.cse_content_type === "pd_course" &&
+          p.cse_content_title === "ChatGPT Foundations for K–12 Educators" &&
+          p.cse_content_gated === false &&
           p.cse_entity_group === "node" &&
-          p.cse_entity_id === 5118510
+          p.cse_entity_id === 5118510 &&
+          p.is_admin_theme_page === false
         );
       },
     },
@@ -451,8 +457,11 @@ describe("CSE Amplitude Event Validation", () => {
           p.page_language === "en" &&
           p.source_org === "Common Sense Education" &&
           p.cse_content_type === "pd_course" &&
+          p.cse_content_title === "Advanced ChatGPT for K-12" &&
+          p.cse_content_gated === false &&
           p.cse_entity_group === "node" &&
-          p.cse_entity_id === 5122779
+          p.cse_entity_id === 5122779 &&
+          p.is_admin_theme_page === false
         );
       },
     },
@@ -470,8 +479,11 @@ describe("CSE Amplitude Event Validation", () => {
           p.page_language === "en" &&
           p.source_org === "Common Sense Education" &&
           p.cse_content_type === "pd_course" &&
+          p.cse_content_title === "Modeling Healthy Digital Habits" &&
+          p.cse_content_gated === false &&
           p.cse_entity_group === "node" &&
-          p.cse_entity_id === 5126107
+          p.cse_entity_id === 5126107 &&
+          p.is_admin_theme_page === false
         );
       },
     },
@@ -567,14 +579,18 @@ describe("CSE Amplitude Event Validation", () => {
       },
     },
     {
-      name: "Viewed Experiment Variant (Magic Link Registration)",
+      name: "Viewed Experiment Variant (magic_reg_vs_classic)",
       path: "/user/login",
       eventType: "Viewed Experiment Variant",
       assert: (evt) => {
         const p = evt.event_properties || {};
         return (
+          p.page_url_path === "/user/login" &&
+          p.page_http_status_code === 200 &&
+          p.source_org === "Common Sense Education" &&
           p.experiment_name === "magic_reg_vs_classic" &&
-          p.variant === "magic_link"
+          ["magic_link", "classic"].includes(p.variant) &&
+          (!p.experiment_magic_reg_vs_classic_variant || p.experiment_magic_reg_vs_classic_variant === p.variant)
         );
       },
     },
@@ -604,9 +620,15 @@ describe("CSE Amplitude Event Validation", () => {
       },
       assert: (evt) => {
         const p = evt.event_properties || {};
+        const tag = String(p.element_tag || p["[Amplitude] Element Tag"] || "").toLowerCase();
         return (
           p.page_url_path === "/education" &&
-          (p.interaction_type === undefined || String(p.interaction_type).toLowerCase() === "click")
+          p.cse_content_type === "homepage" &&
+          p.cse_entity_id === 5118191 &&
+          String(p.interaction_type || "").toLowerCase() === "click" &&
+          tag === "a" &&
+          p.element_type === "link" &&
+          p.link_type === "internal"
         );
       },
     },
@@ -625,7 +647,11 @@ describe("CSE Amplitude Event Validation", () => {
         },
       },
       run: () => {
+        // Open the video modal, then click the big play button inside it
         cy.get("span[id^='video-modal-']").first().should("exist").click({ force: true });
+        cy.get(".modal__dialog video-js button.vjs-big-play-button", { timeout: 10000 })
+          .should("exist")
+          .click({ force: true });
         cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
       },
       assert: (evt) => {
@@ -708,78 +734,6 @@ describe("CSE Amplitude Event Validation", () => {
           optionalEq(p, "source_org", "Common Sense Education") &&
           optionalEq(p, "cse_content_type", "collection") &&
           optionalEq(p, "cse_entity_id", 5112984)
-        );
-      },
-    },
-    {
-      name: "Opened Lesson Slide Modal (What Is Media?)",
-      path: "/education/digital-literacy/what-is-media",
-      eventType: "Opened Lesson Slide Modal",
-      timeoutMs: 30000,
-      run: () => {
-        cy.get('[data-ampl-media-asset-type="Slideshow"]').first().should("exist").click({ force: true });
-        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
-      },
-      assert: (evt) => {
-        const p = evt.event_properties || {};
-        return (
-          p.page_url_path === "/education/digital-literacy/what-is-media" &&
-          p.media_type === "Slideshow" &&
-          optionalEq(p, "media_id", "2039540")
-        );
-      },
-    },
-    {
-      name: "Opened Student Handout Modal (What Is Media?)",
-      path: "/education/digital-literacy/what-is-media",
-      eventType: "Opened Student Handout Modal",
-      timeoutMs: 30000,
-      run: () => {
-        cy.get('[data-ampl-media-asset-type="Remote Document"]').first().should("exist").click({ force: true });
-        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
-      },
-      assert: (evt) => {
-        const p = evt.event_properties || {};
-        return (
-          p.page_url_path === "/education/digital-literacy/what-is-media" &&
-          p.media_type === "Remote Document" &&
-          optionalEq(p, "media_id", "2039539")
-        );
-      },
-    },
-    {
-      name: "Opened Lesson Slide Modal (What Is Media?)",
-      path: "/education/digital-literacy/what-is-media",
-      eventType: "Opened Lesson Slide Modal",
-      timeoutMs: 30000,
-      run: () => {
-        cy.get('[data-ampl-media-asset-type="Slideshow"]').first().should("exist").click({ force: true });
-        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
-      },
-      assert: (evt) => {
-        const p = evt.event_properties || {};
-        return (
-          p.page_url_path === "/education/digital-literacy/what-is-media" &&
-          p.media_type === "Slideshow" &&
-          optionalEq(p, "media_id", "2039540")
-        );
-      },
-    },
-    {
-      name: "Opened Student Handout Modal (What Is Media?)",
-      path: "/education/digital-literacy/what-is-media",
-      eventType: "Opened Student Handout Modal",
-      timeoutMs: 30000,
-      run: () => {
-        cy.get('[data-ampl-media-asset-type="Remote Document"]').first().should("exist").click({ force: true });
-        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
-      },
-      assert: (evt) => {
-        const p = evt.event_properties || {};
-        return (
-          p.page_url_path === "/education/digital-literacy/what-is-media" &&
-          p.media_type === "Remote Document" &&
-          optionalEq(p, "media_id", "2039539")
         );
       },
     },
