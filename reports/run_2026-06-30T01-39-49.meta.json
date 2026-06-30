@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-06-30T01-39-49",
+  "environment": "QA",
+  "baseUrl": "https://qa.commonsense.org",
+  "stats": {
+    "passed": 29,
+    "failed": 1,
+    "flaky": 0,
+    "skipped": 0,
+    "total": 30,
+    "passRate": 97,
+    "elapsedMs": 139430
+  },
+  "failures": [
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Auth Events > fires \"Viewed Experiment Variant\" on /user/login (Viewed Experiment Variant (magic_reg_vs_classic))",
+      "project": "chrome",
+      "error": "Error: Amplitude event not captured: Viewed Experiment Variant. Seen: $identify, session_start, Viewed Login Form",
+      "retries": 0
+    }
+  ],
+  "flakyTests": [],
+  "highRetryTests": []
+}
