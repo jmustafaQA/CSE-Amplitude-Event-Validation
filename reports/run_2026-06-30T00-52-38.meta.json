@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-06-30T00-52-38",
+  "environment": "QA",
+  "baseUrl": "https://qa.commonsense.org",
+  "stats": {
+    "passed": 28,
+    "failed": 2,
+    "flaky": 0,
+    "skipped": 0,
+    "total": 30,
+    "passRate": 93,
+    "elapsedMs": 132015
+  },
+  "failures": [
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Auth Events > fires \"Viewed Experiment Variant\" on /user/login (Viewed Experiment Variant (magic_reg_vs_classic))",
+      "project": "chrome",
+      "error": "Error: Amplitude event not captured: Viewed Experiment Variant. Seen: $identify, session_start, Viewed Login Form",
+      "retries": 0
+    },
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Clicked / Interaction Events > fires \"Clicked Link\" on /education (Clicked Link (EDU Homepage Hero CTA))",
+      "project": "chrome",
+      "error": "TypeError: The following error originated from your application code, not from Cypress.",
+      "retries": 0
+    }
+  ],
+  "flakyTests": [],
+  "highRetryTests": []
+}
