@@ -579,6 +579,10 @@ describe("CSE Amplitude Event Validation", () => {
       },
     },
     {
+      // Skipped: magic_reg_vs_classic experiment is no longer active on /user/login —
+      // the Viewed Experiment Variant event no longer fires for this experiment.
+      // Re-enable if the experiment is relaunched or a new login-page experiment ships.
+      skip: true,
       name: "Viewed Experiment Variant (magic_reg_vs_classic)",
       path: "/user/login",
       eventType: "Viewed Experiment Variant",
