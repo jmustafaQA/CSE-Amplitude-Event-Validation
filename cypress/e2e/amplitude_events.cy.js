@@ -610,17 +610,14 @@ describe("CSE Amplitude Event Validation", () => {
 
         cy.get(selector).first().then(($a) => {
           const el = $a[0];
-          el.addEventListener(
-            "click",
-            (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            },
-            { once: true }
-          );
+          // preventDefault stops navigation; stopPropagation is intentionally omitted
+          // so Amplitude's document-level click listener still fires.
+          el.addEventListener("click", (e) => { e.preventDefault(); }, { once: true });
         });
 
         cy.get(selector).first().click({ force: true });
+        cy.wait(1000);
+        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
       },
       assert: (evt) => {
         const p = evt.event_properties || {};
@@ -688,6 +685,7 @@ describe("CSE Amplitude Event Validation", () => {
       run: () => {
         dismissCtaModal();
         cy.get('button[id^="video-modal-"].preview-teaser-link').first().should("be.visible").click({ force: true });
+        cy.wait(2000);
         cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
       },
       assert: (evt) => {
@@ -801,7 +799,8 @@ describe("CSE Amplitude Event Validation", () => {
         cy.get("video.vjs-tech", { timeout: 60000 }).should("exist");
         cy.get("button.vjs-big-play-button", { timeout: 30000 }).should("be.visible").click({ force: true });
 
-        cy.get("button.vjs-play-control", { timeout: 30000 }).should("be.visible").click({ force: true });
+        cy.get(".video-js").trigger("mousemove");
+        cy.get("button.vjs-play-control", { timeout: 10000 }).should("be.visible").click({ force: true });
         cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
       },
       assert: (evt) => {
