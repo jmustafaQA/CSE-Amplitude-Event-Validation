@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-07-07T19-25-11",
+  "environment": "QA",
+  "baseUrl": "https://www.commonsense.org",
+  "stats": {
+    "passed": 27,
+    "failed": 3,
+    "flaky": 0,
+    "skipped": 2,
+    "total": 32,
+    "passRate": 84,
+    "elapsedMs": 250396
+  },
+  "failures": [
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Auth Events > fires \"Viewed Experiment Variant\" on /user/login (Viewed Experiment Variant (Magic Link Registration))",
+      "project": "chrome",
+      "error": "Error: Amplitude event not captured: Viewed Experiment Variant. Seen: $identify, session_start, Viewed Login Form",
+      "retries": 0
+    },
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Clicked / Interaction Events > fires \"Clicked Link\" on /education (Clicked Link (EDU Homepage Hero CTA))",
+      "project": "chrome",
+      "error": "Error: Amplitude event not captured: Clicked Link. Seen: $identify, session_start, Viewed Edu Home Page",
+      "retries": 0
+    },
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Clicked / Interaction Events > fires \"Played Video\" on /education/uk/digital-citizenship (Played Video (UK DIY page - Hero Video))",
+      "project": "chrome",
+      "error": "Error: Amplitude event not captured: Played Video. Seen: $identify, session_start, Viewed Lesson Info",
+      "retries": 0
+    }
+  ],
+  "flakyTests": [],
+  "highRetryTests": []
+}
