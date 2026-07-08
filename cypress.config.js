@@ -2,7 +2,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const REPORTS_DIR = path.join(__dirname, "reports");
+const ENV_LABEL   = process.env.REPORT_ENV || "qa";
+const REPORTS_DIR = path.join(__dirname, "reports", ENV_LABEL);
 
 function ensureReportsDir() {
   if (!fs.existsSync(REPORTS_DIR)) {

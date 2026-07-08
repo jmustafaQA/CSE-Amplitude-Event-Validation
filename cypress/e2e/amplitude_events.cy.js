@@ -71,9 +71,12 @@ describe("CSE Amplitude Event Validation", () => {
     cy.wait(1000);
   };
 
-  const runCase = ({ name, path, eventType, assert, run, visitOptions, timeoutMs, skip }) => {
+  const runCase = ({ name, path, eventType, assert, preRun, run, visitOptions, timeoutMs, skip }) => {
     const itFn = skip ? it.skip : it;
     itFn(`fires "${eventType}" on ${path} (${name})`, () => {
+      if (typeof preRun === "function") {
+        preRun();
+      }
       cy.visitWithAmplitudeCapture(path, visitOptions);
 
       if (typeof run === "function") {
@@ -194,6 +197,11 @@ describe("CSE Amplitude Event Validation", () => {
       name: "Viewed Edu Home Page",
       path: "/education",
       eventType: "Viewed Edu Home Page",
+      preRun: () => {
+        // /education throws app-level JS errors (jQuery validate, Cloudflare Turnstile)
+        // that have nothing to do with Amplitude tracking — suppress them
+        cy.on("uncaught:exception", () => false);
+      },
       assert: (evt) => {
         const p = evt.event_properties || {};
         return (
@@ -538,6 +546,9 @@ describe("CSE Amplitude Event Validation", () => {
       name: "Viewed Registration Form",
       path: "/user/register",
       eventType: "Viewed Registration Form",
+      preRun: () => {
+        cy.on("uncaught:exception", () => false);
+      },
       assert: (evt) => {
         const p = evt.event_properties || {};
         return (
@@ -605,6 +616,9 @@ describe("CSE Amplitude Event Validation", () => {
       name: "Clicked Link (EDU Homepage Hero CTA)",
       path: "/education",
       eventType: "Clicked Link",
+      preRun: () => {
+        cy.on("uncaught:exception", () => false);
+      },
       run: () => {
         const selector = ".home-marketing-block a.btn";
 
@@ -736,6 +750,48 @@ describe("CSE Amplitude Event Validation", () => {
           optionalEq(p, "source_org", "Common Sense Education") &&
           optionalEq(p, "cse_content_type", "collection") &&
           optionalEq(p, "cse_entity_id", 5112984)
+        );
+      },
+    },
+    {
+      // skip: [data-ampl-media-asset-type="Slideshow"] no longer present on page — re-enable once selector is confirmed
+      skip: true,
+      name: "Opened Lesson Slide Modal (What Is Media?)",
+      path: "/education/digital-literacy/what-is-media",
+      eventType: "Opened Lesson Slide Modal",
+      timeoutMs: 30000,
+      run: () => {
+        cy.get('[data-ampl-media-asset-type="Slideshow"]', { timeout: 10000 })
+          .first().scrollIntoView().click({ force: true });
+        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
+      },
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/digital-literacy/what-is-media" &&
+          p.media_type === "Slideshow" &&
+          optionalEq(p, "media_id", "2039540")
+        );
+      },
+    },
+    {
+      // skip: [data-ampl-media-asset-type="Remote Document"] no longer present on page — re-enable once selector is confirmed
+      skip: true,
+      name: "Opened Student Handout Modal (What Is Media?)",
+      path: "/education/digital-literacy/what-is-media",
+      eventType: "Opened Student Handout Modal",
+      timeoutMs: 30000,
+      run: () => {
+        cy.get('[data-ampl-media-asset-type="Remote Document"]', { timeout: 10000 })
+          .first().scrollIntoView().click({ force: true });
+        cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
+      },
+      assert: (evt) => {
+        const p = evt.event_properties || {};
+        return (
+          p.page_url_path === "/education/digital-literacy/what-is-media" &&
+          p.media_type === "Remote Document" &&
+          optionalEq(p, "media_id", "2039539")
         );
       },
     },
