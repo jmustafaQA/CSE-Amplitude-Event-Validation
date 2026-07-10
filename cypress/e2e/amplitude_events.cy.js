@@ -664,7 +664,7 @@ describe("CSE Amplitude Event Validation", () => {
       run: () => {
         // Open the video modal, then click the big play button inside it
         cy.get("span[id^='video-modal-']").first().should("exist").click({ force: true });
-        cy.get(".modal__dialog video-js button.vjs-big-play-button", { timeout: 10000 })
+        cy.get("video-js button.vjs-big-play-button", { timeout: 10000 })
           .should("exist")
           .click({ force: true });
         cy.window({ log: false }).then((win) => { if (win.amplitude?.flush) return win.amplitude.flush(); });
