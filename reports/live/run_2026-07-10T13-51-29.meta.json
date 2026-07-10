@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-07-10T13-51-29",
+  "environment": "QA",
+  "baseUrl": "https://www.commonsense.org",
+  "stats": {
+    "passed": 27,
+    "failed": 2,
+    "flaky": 0,
+    "skipped": 3,
+    "total": 32,
+    "passRate": 84,
+    "elapsedMs": 55298
+  },
+  "failures": [
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Viewed Events > fires \"Viewed Search\" on /education/search?f%5B0%5D=search_type%3Acollection&sort_by=field_search_sort_date (Viewed Search (Collections filter + Sort by date))",
+      "project": "chrome",
+      "error": "CypressError: `cy.visit()` failed trying to load:",
+      "retries": 0
+    },
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Clicked / Interaction Events > fires \"Played Video\" on /education/uk/digital-citizenship (Played Video (UK DIY page - Hero Video))",
+      "project": "chrome",
+      "error": "AssertionError: Timed out retrying after 10000ms: Expected to find element: `video-js button.vjs-big-play-button`, but never found it.",
+      "retries": 0
+    }
+  ],
+  "flakyTests": [],
+  "highRetryTests": []
+}
