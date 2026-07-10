@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-07-10T10-57-27",
+  "environment": "QA",
+  "baseUrl": "https://www.commonsense.org",
+  "stats": {
+    "passed": 28,
+    "failed": 1,
+    "flaky": 0,
+    "skipped": 3,
+    "total": 32,
+    "passRate": 88,
+    "elapsedMs": 62295
+  },
+  "failures": [
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Video Events > fires \"Paused Video\" on /education/collections/quick-digital-citizenship-lessons-for-grades-k-12 (Paused Video (Collection Featured Video))",
+      "project": "chrome",
+      "error": "AssertionError: Timed out retrying after 10000ms: expected '<button.vjs-play-control.vjs-control.vjs-button>' to be 'visible'",
+      "retries": 0
+    }
+  ],
+  "flakyTests": [],
+  "highRetryTests": []
+}
