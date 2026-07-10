@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-07-10T12-31-30",
+  "environment": "QA",
+  "baseUrl": "https://www.commonsense.org",
+  "stats": {
+    "passed": 27,
+    "failed": 2,
+    "flaky": 0,
+    "skipped": 3,
+    "total": 32,
+    "passRate": 84,
+    "elapsedMs": 89281
+  },
+  "failures": [
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Video Events > fires \"Played Video\" on /education/collections/quick-digital-citizenship-lessons-for-grades-k-12 (Played Video (Collection Featured Video))",
+      "project": "chrome",
+      "error": "AssertionError: Timed out retrying after 20000ms: video paused: expected true to equal false",
+      "retries": 0
+    },
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Video Events > fires \"Paused Video\" on /education/collections/quick-digital-citizenship-lessons-for-grades-k-12 (Paused Video (Collection Featured Video))",
+      "project": "chrome",
+      "error": "AssertionError: Timed out retrying after 10000ms: expected '<button.vjs-play-control.vjs-control.vjs-button>' to be 'visible'",
+      "retries": 0
+    }
+  ],
+  "flakyTests": [],
+  "highRetryTests": []
+}
