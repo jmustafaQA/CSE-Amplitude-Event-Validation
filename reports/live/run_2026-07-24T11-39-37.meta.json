@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-07-24T11-39-37",
+  "environment": "QA",
+  "baseUrl": "https://www.commonsense.org",
+  "stats": {
+    "passed": 28,
+    "failed": 1,
+    "flaky": 0,
+    "skipped": 3,
+    "total": 32,
+    "passRate": 88,
+    "elapsedMs": 75396
+  },
+  "failures": [
+    {
+      "spec": "amplitude_events.cy.js",
+      "title": "CSE Amplitude Event Validation > Clicked / Interaction Events > fires \"Played Video\" on /education/uk/digital-citizenship (Played Video (UK DIY page - Hero Video))",
+      "project": "chrome",
+      "error": "AssertionError: Timed out retrying after 10000ms: Expected to find element: `video-js button.vjs-big-play-button`, but never found it.",
+      "retries": 0
+    }
+  ],
+  "flakyTests": [],
+  "highRetryTests": []
+}
